@@ -70,7 +70,8 @@ void elimination()
 	printf("Enter number of minterms: ");
 	scanf("%d", &number_of_minterm);
 	minterm = (int*) malloc(number_of_minterm * sizeof(int));
-	printf("Input the minterm: ");
+	if (number_of_minterm != 0)
+		printf("Input the minterm: ");
 	for (int i = 0; i < number_of_minterm; ++i)
 		scanf("%d", &minterm[i]);
 	printf("Enter number of dont cares: ");
@@ -131,28 +132,6 @@ void elimination()
 	for (int i = column - 1; i >= 0; --i)
 		PI = Union(PI, &Table[i]);
 
-	/* Remove the single dont care in prime implicants */
-	//order_set* subdontcare = Subset(DC, PI);
-	//PI = Subtraction(PI, subdontcare);
-	//Display(PI);
-	for (int i = 0; i < PI->length; ++i)
-	{
-		int flag = 1;
-		for (int j = 0; j < MT->length; ++j)
-		{
-			if (ischild(MT->set[j], PI->set[i]))
-			{
-				flag = 0;
-				break;
-			}
-		}
-		if (flag == 1)
-		{
-			Delete(PI, PI->set[i]);
-			i--;
-		}
-	}
-
 	/*Count number of minterm*/
 	char** minterm_element = Union(MT, DC)->set;
 	int* minterm_count = (int*) malloc (sizeof(int) * (number_of_dontcare + number_of_minterm));
@@ -177,6 +156,12 @@ void elimination()
 			}
 	}
 	
+	/* Dismiss the doncare element*/
+	for (int i = 0; i < number_of_dontcare + number_of_minterm; ++i)
+		for (int j = 0; j < number_of_dontcare; ++j)
+			if (strcmp(minterm_element[i], DC->set[j]) == 0)
+				minterm_count[i] = 0;
+
 	/*Build the essential prime implicants*/
 	order_set* EPI = (order_set*) malloc(sizeof(order_set));
 	EPI->set = NULL;
@@ -188,6 +173,9 @@ void elimination()
 			minterm_count[i] = 0;
 		}
 	}
+	printf("Essense Prime implicants: \n");
+	Display(EPI);
+	printf("\n");
 
 	/*Non essential prime implicants*/
 	for (int i = 0; i < (number_of_dontcare + number_of_minterm); ++i)
@@ -203,6 +191,9 @@ void elimination()
 	}
 
 	order_set* NEPI = Subtraction(PI, EPI);
+	printf("Nonessense Prime implicants: \n");
+	Display(NEPI);
+
 
 	int* nonessence_count = (int*) malloc(sizeof(int) * NEPI->length);
 	for (int i = 0; i < NEPI->length; ++i)
@@ -233,8 +224,12 @@ void elimination()
 	loop(nonessence, traversal, number_of_dontcare + number_of_minterm, number_of_dontcare + number_of_minterm, minterm_element, minterm_count, PI_element, NEPI, count);
 
 	F = Union(F, nonessence);
+	char* str = formular(F);
 	printf("*********************************\n");
-	printf("F = %s\n", formular(F));
+	if (number_of_minterm == 0)
+		printf("F = 0\n");
+	else
+		printf("F = %s\n", formular(F));
 	printf("*********************************\n");
 }
 
@@ -324,5 +319,7 @@ char* formular(order_set* result)
 		if (i != result->length - 1)
 			strcat(str, " + ");
 	}
+	if (strlen(str) == 0)
+		return "1";
 	return str;
 }
